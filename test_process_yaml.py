@@ -22,6 +22,7 @@ class TestConversion(unittest.TestCase):
 
     def test_compare_whisper_info(self):
         #self.assertEqual(compare_whisper_info('data_team_collectd','^data\.collectd\.',['259200 10','2592000 60']), 'data')
+        compare_whisper_info('data_team_collectd','^data\.collectd\.',['259200 10','2592000 60'])
         return
 
 if __name__ == '__main__':

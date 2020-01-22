@@ -1,4 +1,5 @@
 import yaml
+import os
 
 switcher = {
         's': 1,
@@ -24,9 +25,12 @@ def convert_retention_to_int(retention):
 with open(r'type_graphite_storage.yaml') as file:
     content = yaml.full_load(file)
     schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
+    directory = 'output/'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     for schema, info in schemas.items():
         retentions = info['retentions']
-        path = "output/" + schema
+        path = directory + schema
         f = open(path, "w+")
         for retention in retentions:
             freq_str, duration_str = retention.split(':')

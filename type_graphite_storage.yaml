@@ -1,0 +1,126 @@
+---
+classes:
+ - bigcommerce_graphite_gcp::roles::storage
+nagios3::nrpe::threshold_disk_space_crit: 5 # These disks are yuuuge
+bigcommerce_graphite_gcp::roles::storage::graphite_schemas:
+  copperegg:
+    pattern: '^copperegg\.'
+    retentions:
+      - '1m:1y'
+      - '1h:5y'
+  alertsite:
+    pattern: '^alertsite\.'
+    retentions:
+      - '1m:1y'
+      - '1h:5y'
+  1min_servers:
+    pattern: '^servers\.'
+    retentions:
+      - '60s:5d'
+      - '15m:2y'
+  collectd:
+    pattern: '^collectd\.'
+    retentions:
+      - '10s:3d'
+      - '60s:30d'
+      - '5m:1y'
+      - '30m:2y'
+  data_team_collectd:
+    pattern: '^data\.collectd\.'
+    retentions:
+      - '10s:3d'
+      - '60s:30d'
+      - '5m:1y'
+      - '30m:2y'
+  totango_cron:
+    pattern: '^totango_cron\..*'
+    retentions:
+      - '1h:1y'
+  redshift_hawking_cronjob:
+    pattern: '^redshift\.hawking\..*'
+    retentions:
+      - '1h:1y'
+  hawking_core:
+    pattern: '^stats_counts\.hawking_core\..*'
+    retentions:
+      - '1h:1y'
+  ruby_app_stats:
+    pattern: '^stats\..*\.(theme-registry|app-registry|A-A)\..*'
+    retentions:
+      - '10:2160'
+      - '60:10080'
+      - '600:180d'
+  ruby_app_stats_counts:
+    pattern: '^stats_counts\.(app-registry|theme-registry|A-A)\..*'
+    retentions:
+      - '10:2160'
+      - '60:10080'
+      - '600:180d'
+  consul_health_service:
+    pattern: '^stats\.counts\.consul\.consul\.health\.service\.'
+    retentions:
+      - '10s:1d'
+  consul_health_service_counts:
+    pattern: '^stats_counts\.consul\.consul\.health\.service\.'
+    retentions:
+      - '10s:1d'
+  nomad_client:
+    pattern: '^stats\.counts\.nomad\.client\.allocs\..*'
+    retentions:
+      - '10m:30m'
+  bcapp_profiler:
+    pattern: '^stats\.timers\.bcapp\.profiler\..*'
+    retentions:
+      - '1m:1h'
+  zzzzzzza_stats:
+    pattern: '^(stats|stats_counts)\..*'
+    retentions:
+      - '10s:3d'
+      - '60s:30d'
+      - '5m:1y'
+      - '30m:2y'
+  zzzzzzzz_default:
+    pattern: '.*'
+    retentions:
+      - '900:350400'
+bigcommerce_graphite_gcp::roles::storage::graphite_storage_aggregations:
+  stats_counts:
+    pattern: '^stats_counts\..*'
+    method: 'sum'
+    x_files_factor: 0
+  stats.sets:
+    pattern: '^stats\.sets\..*'
+    method: 'sum'
+    x_files_factor: 0
+  min:
+    pattern: '\.min$'
+    method: 'min'
+    x_files_factor: 0.1
+  max:
+    pattern: '\.max$'
+    method: 'max'
+    x_files_factor: 0.1
+  upper:
+    pattern: '\.upper$'
+    method: 'max'
+    x_files_factor: 0.1
+  lower:
+    pattern: '\.lower$'
+    method: 'min'
+    x_files_factor: 0.1
+  count:
+    pattern: '\.count$'
+    method: 'sum'
+    x_files_factor: 0.1
+  sum_:
+    pattern: '\.sum_90$'
+    method: 'sum'
+    x_files_factor: 0.1
+  sum:
+    pattern: '\.sum$'
+    method: 'sum'
+    x_files_factor: 0
+  zzzzz_default_average:
+    pattern: '\.*'
+    method: 'average'
+    x_files_factor: 0.3

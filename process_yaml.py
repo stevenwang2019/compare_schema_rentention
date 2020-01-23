@@ -66,17 +66,27 @@ def compare_whisper_info(schema, pattern, list):
         print('previously checked: '+subdir)
         return
     checked.append(subdir)
-    cmd = 'find '+wsp_root+subdir+" -name *.wsp"
+    cmd = []
+    cmd.append('find')
+    cmd.append(wsp_root+subdir)
+    cmd.append('-name')
+    cmd.append('*.wsp')
+    # cmd = 'find '+wsp_root+subdir+" -name *.wsp"
     print(cmd)
     try:
-        out = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout,stderr = out.communicate()
-        print(stdout)
-        for file in stdout.split('\n'):
-            wsp_info_cmd = 'whisper-info '+ file
-            wsp_out = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        findout,finderr = out.communicate()
+        print(findout)
+        for file in findout.split('\n'):
+            wsp_info_cmd = []
+            wsp_info_cmd.append('whisper-info')
+            wsp_info_cmd.append(file)
+            print(wsp_info_cmd)
+            wsp_out = subprocess.Popen(wsp_info_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             wspout,wsperr = wsp_out.communicate()
+            print(wspout)
             if compare_wsp_retention(wspout, list) == 1:
+                print("found different retention")
                 diff_list.append(file)
     except Exception as ex:
         print(ex)
@@ -86,9 +96,10 @@ def compare_whisper_info(schema, pattern, list):
 with open(r'type_graphite_storage.yaml') as file:
     content = yaml.full_load(file)
     schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
-    directory = 'output/'
-    create_dir(directory)
-    create_dir('diff/')
+    output_dir = 'output/'
+    diff_dir = 'diff/'
+    create_dir(output_dir)
+    create_dir(diff_dir)
     for schema, info in schemas.items():
         retentions = info['retentions']
         list = []
@@ -96,8 +107,7 @@ with open(r'type_graphite_storage.yaml') as file:
             output_string = convert_retention_to_string(retention)
             list.append(output_string)
         compare_whisper_info(schema, info['pattern'], list)
-        # write_to_file(directory + schema, list)
-    print("diff_list is :")
-    for diff in diff_list:
-        print(diff)
-    write_to_file('diff/'+schema, diff_list)
+        write_to_file(output_dir + schema, list)
+        if len(diff_list) > 0:
+            write_to_file(diff_dir+schema, diff_list)
+        diff_list = []

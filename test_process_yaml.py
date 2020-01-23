@@ -1,7 +1,5 @@
 import unittest
-from process_yaml import convert_retention_to_int
-from process_yaml import compare_whisper_info
-from process_yaml import extract_subdir_from_pattern
+from process_yaml import *
 
 class TestConversion(unittest.TestCase):
     def test_convert_retention_to_int(self):
@@ -17,12 +15,16 @@ class TestConversion(unittest.TestCase):
         self.assertRaises(Exception, convert_retention_to_int, '000badformat')
         self.assertRaises(Exception, convert_retention_to_int, '12x')
 
-    def test_extract_subdir_from_pattern(self):
-        self.assertEqual(extract_subdir_from_pattern('^data\.collectd\.'),'data')
+    def test_build_subdir_from_pattern(self):
+        self.assertEqual(build_subdir_from_pattern('^data\.collectd\.'),'^'+wsp_root+'/data/collectd/')
+        self.assertEqual(build_subdir_from_pattern('^stats_counts\.hawking_core\..*'),'^'+wsp_root+'/stats_counts/hawking_core/.*')
+        self.assertEqual(build_subdir_from_pattern('^totango_cron\..*'),'^'+wsp_root+'/totango_cron/.*')
+        self.assertEqual(build_subdir_from_pattern('^(stats|stats_counts)\..*'),'^'+wsp_root+'/(stats|stats_counts)/.*')
+        self.assertEqual(build_subdir_from_pattern('.*'), wsp_root+'/.*')
 
     def test_compare_whisper_info(self):
         #self.assertEqual(compare_whisper_info('data_team_collectd','^data\.collectd\.',['259200 10','2592000 60']), 'data')
-        compare_whisper_info('data_team_collectd','^data\.collectd\.',['259200 10','2592000 60'])
+        #compare_whisper_info('data_team_collectd','^data\.collectd\.',['259200 10','2592000 60'])
         return
 
 if __name__ == '__main__':

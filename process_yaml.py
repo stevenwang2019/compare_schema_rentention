@@ -2,6 +2,7 @@ import yaml
 import os
 import subprocess
 import sys, traceback
+import re
 
 switcher = {
         's': 1,
@@ -10,11 +11,10 @@ switcher = {
         'd': 86400,
         'y': 31536000,
     }
-wsp_root = '/mnt/data/whisper/'
-diff_list = []
-checked = []
+wsp_root = '/mnt/data/whisper'
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
+diff_list = []
 
 def convert_retention_to_int(retention):
     if(len(retention)== 0):
@@ -46,10 +46,16 @@ def write_to_file(path, list):
         f.write(value+"\n")
     f.close()
 
-def extract_subdir_from_pattern(pattern):
-    return pattern[1:].split('\.')[0]
+def build_subdir_from_pattern(pattern):
+    replaced = re.sub('\\\.','/',pattern)
+    if(pattern[0] == '^'):
+        replaced = "^"+wsp_root+"/"+replaced[1:]
+    else:
+        replaced = wsp_root+"/"+replaced
+    return replaced
 
 def compare_wsp_retention(wspout, list):
+    # todo: check number of archives
     counter = 0
     prevline = ""
     for line in wspout.split('\n'):
@@ -60,24 +66,25 @@ def compare_wsp_retention(wspout, list):
         prevline = line
     return 0
 
-def compare_whisper_info(schema, pattern, list):
-    subdir = extract_subdir_from_pattern(pattern)
-    if(subdir in checked):
-        print('previously checked: '+subdir)
-        return
-    checked.append(subdir)
+class Archive:
+    def __init__(self, schema, pattern, rentention_list):
+        self.schema = schema
+        self.pattern = pattern
+        self.rlist = rentention_list
+
+def compare_whisper_info(rules):
     cmd = []
     cmd.append('find')
-    cmd.append(wsp_root+subdir)
+    cmd.append(wsp_root)
     cmd.append('-name')
     cmd.append('*.wsp')
-    # cmd = 'find '+wsp_root+subdir+" -name *.wsp"
     print(cmd)
     try:
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         findout,finderr = out.communicate()
         print(findout)
         for file in findout.split('\n'):
+            archive = match_file_path(file, rules)
             wsp_info_cmd = []
             wsp_info_cmd.append('whisper-info')
             wsp_info_cmd.append(file)
@@ -85,7 +92,7 @@ def compare_whisper_info(schema, pattern, list):
             wsp_out = subprocess.Popen(wsp_info_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             wspout,wsperr = wsp_out.communicate()
             print(wspout)
-            if compare_wsp_retention(wspout, list) == 1:
+            if compare_wsp_retention(wspout, archive.rlist) == 1:
                 print("found different retention")
                 diff_list.append(file)
     except Exception as ex:
@@ -93,21 +100,29 @@ def compare_whisper_info(schema, pattern, list):
         traceback.print_exc()
         return
 
-with open(r'type_graphite_storage.yaml') as file:
-    content = yaml.full_load(file)
-    schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
-    output_dir = 'output/'
-    diff_dir = 'diff/'
-    create_dir(output_dir)
-    create_dir(diff_dir)
-    for schema, info in schemas.items():
-        retentions = info['retentions']
-        list = []
-        for retention in retentions:
-            output_string = convert_retention_to_string(retention)
-            list.append(output_string)
-        compare_whisper_info(schema, info['pattern'], list)
-        write_to_file(output_dir + schema, list)
+def main():
+    with open(r'type_graphite_storage.yaml') as file:
+        content = yaml.full_load(file)
+        schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
+        output_dir = 'output/'
+        diff_dir = 'diff/'
+        create_dir(output_dir)
+        create_dir(diff_dir)
+        rules = []
+        for schema, info in schemas.items():
+            retentions = info['retentions']
+            list = []
+            for retention in retentions:
+                output_string = convert_retention_to_string(retention)
+                list.append(output_string)
+            rules.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list))
+            #compare_whisper_info(schema, info['pattern'], list)
+            write_to_file(output_dir + schema, list)
+        compare_whisper_info(rules)
         if len(diff_list) > 0:
             write_to_file(diff_dir+schema, diff_list)
         diff_list = []
+'''
+if __name__== "__main__":
+    main()
+'''

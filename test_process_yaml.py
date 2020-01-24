@@ -67,6 +67,9 @@ class TestConversion(unittest.TestCase):
 
     def test_match_file_path(self):
         archives = get_baseline_archives()
+        for archive in archives:
+            print(archive.schema)
+
         self.assertEqual(match_file_path(wsp_root+"/stats/timer/total/sum.wsp", archives).schema, "zzzzzzza_stats")
         self.assertEqual(match_file_path(wsp_root+"/copperegg/madeupwsp.wsp", archives).schema, "copperegg")
         self.assertEqual(match_file_path(wsp_root+"/stats/timers/bcapp/profiler/path/file.wsp", archives).schema, "bcapp_profiler")

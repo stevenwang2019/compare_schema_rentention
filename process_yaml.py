@@ -13,6 +13,8 @@ switcher = {
         'y': 31536000,
     }
 wsp_root = '/mnt/data/whisper'
+output_dir = 'output/'
+diff_dir = 'diff.txt'
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
 diff_list = []
@@ -89,22 +91,26 @@ def compare_whisper_info(archives):
     cmd.append(wsp_root)
     cmd.append('-name')
     cmd.append('*.wsp')
-    print(cmd)
+    # print(cmd)
     try:
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         findout,finderr = out.communicate()
-        print(findout)
+        # print(findout)
         for file in findout.split('\n'):
+            if(len(file) == 0):
+                continue
             archive = match_file_path(file, archives)
+            if(archive == "not found" ):
+                continue
             wsp_info_cmd = []
             wsp_info_cmd.append('whisper-info')
             wsp_info_cmd.append(file)
-            print(wsp_info_cmd)
+            # print(wsp_info_cmd)
             wsp_out = subprocess.Popen(wsp_info_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             wspout,wsperr = wsp_out.communicate()
-            print(wspout)
+            # print(wspout)
             if compare_wsp_retention(wspout, archive.rlist) == 1:
-                print("found different retention")
+                print("found different retention "+file)
                 diff_list.append(file)
     except Exception as ex:
         print(ex)
@@ -116,10 +122,7 @@ def get_baseline_archives():
     with open(r'type_graphite_storage.yaml') as file:
         content = yaml.load(file, OrderedDictYAMLLoader)
         schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
-        output_dir = 'output/'
-        diff_dir = 'diff/'
         create_dir(output_dir)
-        create_dir(diff_dir)
         for schema, info in schemas.items():
             retentions = info['retentions']
             list = []
@@ -132,11 +135,11 @@ def get_baseline_archives():
     return archives
 
 def main():
-    archives = get_baseline_archives
+    archives = get_baseline_archives()
     compare_whisper_info(archives)
     if len(diff_list) > 0:
-        write_to_file(diff_dir+schema, diff_list)
-'''
+        print("writing difference to "+diff_dir)
+        write_to_file(diff_dir, diff_list)
+
 if __name__== "__main__":
     main()
-'''

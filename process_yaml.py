@@ -55,15 +55,19 @@ def build_subdir_from_pattern(pattern):
     return replaced
 
 def compare_wsp_retention(wspout, list):
-    # todo: check number of archives
     counter = 0
     prevline = ""
     for line in wspout.split('\n'):
         if 'secondsPerPoint:' in line:
-            new_duration, new_freq = list[counter].split(' ')
-            if prevline.split(':')[1]!= new_duration and line.split(':')[1] != new_freq:
+            if(counter == len(list)):
                 return 1
+            new_duration, new_freq = list[counter].split(' ')
+            if prevline.split(':')[1].strip()!= new_duration or line.split(':')[1].strip() != new_freq:
+                return 1
+            counter+=1
         prevline = line
+    if(counter != len(list)):
+        return 1
     return 0
 
 class Archive:
@@ -101,6 +105,7 @@ def compare_whisper_info(rules):
         return
 
 def main():
+    rules = []
     with open(r'type_graphite_storage.yaml') as file:
         content = yaml.full_load(file)
         schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
@@ -108,7 +113,6 @@ def main():
         diff_dir = 'diff/'
         create_dir(output_dir)
         create_dir(diff_dir)
-        rules = []
         for schema, info in schemas.items():
             retentions = info['retentions']
             list = []
@@ -118,10 +122,9 @@ def main():
             rules.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list))
             #compare_whisper_info(schema, info['pattern'], list)
             write_to_file(output_dir + schema, list)
-        compare_whisper_info(rules)
-        if len(diff_list) > 0:
-            write_to_file(diff_dir+schema, diff_list)
-        diff_list = []
+    compare_whisper_info(rules)
+    if len(diff_list) > 0:
+        write_to_file(diff_dir+schema, diff_list)
 '''
 if __name__== "__main__":
     main()

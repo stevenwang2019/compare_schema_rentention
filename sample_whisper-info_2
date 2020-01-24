@@ -1,0 +1,32 @@
+maxRetention: 63072000
+xFilesFactor: 0.300000011921
+aggregationMethod: average
+fileSize: 2511424
+
+Archive 0
+retention: 259200
+secondsPerPoint: 10
+points: 25920
+size: 311040
+offset: 64
+
+Archive 1
+retention: 2592000
+secondsPerPoint: 60
+points: 43200
+size: 518400
+offset: 311104
+
+Archive 2
+retention: 31536000
+secondsPerPoint: 300
+points: 105120
+size: 1261440
+offset: 829504
+
+Archive 3
+retention: 63072000
+secondsPerPoint: 1800
+points: 35040
+size: 420480
+offset: 2090944

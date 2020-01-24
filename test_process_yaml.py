@@ -29,7 +29,7 @@ class TestConversion(unittest.TestCase):
         self.assertEqual(build_subdir_from_pattern('.*'), wsp_root+'/.*')
 
     def test_compare_wsp_retention(self):
-        # 1 indicates miss match
+        # 1 indicates a miss match
         wspout = []
         list = []
         wspout = helper_read_file('sample_whisper-info')
@@ -57,7 +57,21 @@ class TestConversion(unittest.TestCase):
         list[-2] = "999 300"
         self.assertEqual(compare_wsp_retention(wspout, list) , 1)
 
-        return
+    def test_get_baseline_archives(self):
+        archives = get_baseline_archives()
+        self.assertEqual(len(archives), 16)
+        self.assertEqual(archives[0].schema, "copperegg")
+        self.assertEqual(archives[5].schema, "totango_cron")
+        self.assertEqual(archives[10].schema, "consul_health_service")
+        self.assertEqual(archives[15].schema, "zzzzzzzz_default")
+
+    def test_match_file_path(self):
+        archives = get_baseline_archives()
+        self.assertEqual(match_file_path(wsp_root+"/stats/timer/total/sum.wsp", archives).schema, "zzzzzzza_stats")
+        self.assertEqual(match_file_path(wsp_root+"/copperegg/madeupwsp.wsp", archives).schema, "copperegg")
+        self.assertEqual(match_file_path(wsp_root+"/stats/timers/bcapp/profiler/path/file.wsp", archives).schema, "bcapp_profiler")
+        self.assertEqual(match_file_path(wsp_root+"/stats/counts/nomad/client/allocs/madeupwsp.wsp", archives).schema, "nomad_client")
+        self.assertEqual(match_file_path(wsp_root+"/noneexist/madeupwsp.wsp", archives).schema, "zzzzzzzz_default")
 
 if __name__ == '__main__':
     unittest.main()

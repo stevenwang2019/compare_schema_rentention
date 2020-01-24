@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys, traceback
 import re
+from yaml_ordered_dict import *
 
 switcher = {
         's': 1,
@@ -76,7 +77,13 @@ class Archive:
         self.pattern = pattern
         self.rlist = rentention_list
 
-def compare_whisper_info(rules):
+def match_file_path(filepath, archives):
+    for arch in archives:
+        if re.search(arch.pattern, filepath):
+            return arch
+    return "not found"
+
+def compare_whisper_info(archives):
     cmd = []
     cmd.append('find')
     cmd.append(wsp_root)
@@ -88,7 +95,7 @@ def compare_whisper_info(rules):
         findout,finderr = out.communicate()
         print(findout)
         for file in findout.split('\n'):
-            archive = match_file_path(file, rules)
+            archive = match_file_path(file, archives)
             wsp_info_cmd = []
             wsp_info_cmd.append('whisper-info')
             wsp_info_cmd.append(file)
@@ -104,10 +111,10 @@ def compare_whisper_info(rules):
         traceback.print_exc()
         return
 
-def main():
-    rules = []
+def get_baseline_archives():
+    archives = []
     with open(r'type_graphite_storage.yaml') as file:
-        content = yaml.full_load(file)
+        content = yaml.load(file, OrderedDictYAMLLoader)
         schemas = content['bigcommerce_graphite_gcp::roles::storage::graphite_schemas']
         output_dir = 'output/'
         diff_dir = 'diff/'
@@ -119,10 +126,14 @@ def main():
             for retention in retentions:
                 output_string = convert_retention_to_string(retention)
                 list.append(output_string)
-            rules.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list))
+            archives.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list))
             #compare_whisper_info(schema, info['pattern'], list)
             write_to_file(output_dir + schema, list)
-    compare_whisper_info(rules)
+    return archives
+
+def main():
+    archives = get_baseline_archives
+    compare_whisper_info(archives)
     if len(diff_list) > 0:
         write_to_file(diff_dir+schema, diff_list)
 '''

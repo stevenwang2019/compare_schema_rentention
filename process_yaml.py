@@ -4,6 +4,7 @@ import subprocess
 import sys, traceback
 import re
 from yaml_ordered_dict import *
+import shutil
 
 switcher = {
         's': 1,
@@ -12,12 +13,12 @@ switcher = {
         'd': 86400,
         'y': 31536000,
     }
+diff_path = 'single_thread'
 wsp_root = '/mnt/data/whisper'
 output_dir = 'output/'
-diff_dir = 'diff.txt'
+diff_file = diff_path+'/diff.txt'
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
-diff_list = []
 
 def convert_retention_to_int(retention):
     if(len(retention)== 0):
@@ -36,6 +37,10 @@ def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+def remove_dir(directory):
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
+
 def convert_retention_to_string(retention):
     freq_str, duration_str = retention.split(':')
     freq = convert_retention_to_int(freq_str)
@@ -47,6 +52,11 @@ def write_to_file(path, list):
     f = open(path, "w+")
     for value in list:
         f.write(value+"\n")
+    f.close()
+
+def append_to_file(path, content):
+    f = open(path, "a+")
+    f.write(content+"\n")
     f.close()
 
 def build_subdir_from_pattern(pattern):
@@ -85,33 +95,32 @@ def match_file_path(filepath, archives):
             return arch
     return "not found"
 
-def compare_whisper_info(archives):
-    cmd = []
-    cmd.append('find')
-    cmd.append(wsp_root)
-    cmd.append('-name')
-    cmd.append('*.wsp')
-    # print(cmd)
+def exec_subprocess(cmd):
     try:
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         findout,finderr = out.communicate()
-        # print(findout)
-        for file in findout.split('\n'):
-            if(len(file) == 0):
-                continue
-            archive = match_file_path(file, archives)
-            if(archive == "not found" ):
-                continue
-            wsp_info_cmd = []
-            wsp_info_cmd.append('whisper-info')
-            wsp_info_cmd.append(file)
-            # print(wsp_info_cmd)
-            wsp_out = subprocess.Popen(wsp_info_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            wspout,wsperr = wsp_out.communicate()
-            # print(wspout)
-            if compare_wsp_retention(wspout, archive.rlist) == 1:
-                print("found different retention "+file)
-                diff_list.append(file)
+        return findout, finderr
+    except Exception as ex:
+            print(cmd)
+            print(ex)
+            traceback.print_exc()
+            exit()
+
+def compare_whisper_info(wsp_file, archive):
+    try:
+        if(len(wsp_file) == 0):
+            return
+        if(archive == "not found" ):
+            return
+        wsp_info_cmd = []
+        wsp_info_cmd.append('whisper-info')
+        wsp_info_cmd.append(wsp_file)
+        wspout,wsperr = exec_subprocess(wsp_info_cmd)
+        if compare_wsp_retention(wspout, archive.rlist) == 1:
+            print("found different retention "+wsp_file)
+            append_to_file(diff_file, wsp_file)
+            return 1
+        return 0
     except Exception as ex:
         print(ex)
         traceback.print_exc()
@@ -135,11 +144,18 @@ def get_baseline_archives():
     return archives
 
 def main():
+    remove_dir(diff_path)
+    create_dir(diff_path)
     archives = get_baseline_archives()
-    compare_whisper_info(archives)
-    if len(diff_list) > 0:
-        print("writing difference to "+diff_dir)
-        write_to_file(diff_dir, diff_list)
+    cmd = []
+    cmd.append('find')
+    cmd.append(wsp_root)
+    cmd.append('-name')
+    cmd.append('*.wsp')
+    findout,finderr = exec_subprocess(cmd)
+    for file in findout.split('\n'):
+        archive = match_file_path(file, archives)
+        compare_whisper_info(file, archive)
 
 if __name__== "__main__":
     main()

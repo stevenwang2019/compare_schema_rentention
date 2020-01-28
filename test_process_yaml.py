@@ -67,14 +67,26 @@ class TestConversion(unittest.TestCase):
 
     def test_match_file_path(self):
         archives = get_baseline_archives()
-        for archive in archives:
-            print(archive.schema)
-
         self.assertEqual(match_file_path(wsp_root+"/stats/timer/total/sum.wsp", archives).schema, "zzzzzzza_stats")
         self.assertEqual(match_file_path(wsp_root+"/copperegg/madeupwsp.wsp", archives).schema, "copperegg")
         self.assertEqual(match_file_path(wsp_root+"/stats/timers/bcapp/profiler/path/file.wsp", archives).schema, "bcapp_profiler")
         self.assertEqual(match_file_path(wsp_root+"/stats/counts/nomad/client/allocs/madeupwsp.wsp", archives).schema, "nomad_client")
         self.assertEqual(match_file_path(wsp_root+"/noneexist/madeupwsp.wsp", archives).schema, "zzzzzzzz_default")
+
+    def test_exec_subprocess(self):
+        wsp_root = "wsp_root"
+        if os.path.isdir(wsp_root):
+            cmd = []
+            cmd.append('find')
+            cmd.append(wsp_root)
+            cmd.append('-name')
+            cmd.append('*.wsp')
+            out, err = exec_subprocess(cmd)
+            out = out.split('\n')
+            # print(out)
+            # print(err)
+            self.assertEqual(len(out), 29)
+            self.assertEqual(err, None)
 
 if __name__ == '__main__':
     unittest.main()

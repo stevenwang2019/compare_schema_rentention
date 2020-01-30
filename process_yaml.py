@@ -5,6 +5,7 @@ import sys, traceback
 import re
 from yaml_ordered_dict import *
 import shutil
+import shared_vars
 
 switcher = {
         's': 1,
@@ -13,10 +14,10 @@ switcher = {
         'd': 86400,
         'y': 31536000,
     }
-diff_path = 'single_thread'
-wsp_root = '/mnt/data/whisper'
-output_dir = 'output/'
-diff_file = diff_path+'/diff.txt'
+diff_dir = shared_vars.diff_dir
+wsp_root = shared_vars.wsp_root
+output_dir = shared_vars.output_dir
+diff_file = shared_vars.diff_file
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
 
@@ -144,8 +145,8 @@ def get_baseline_archives():
     return archives
 
 def main():
-    remove_dir(diff_path)
-    create_dir(diff_path)
+    remove_dir(diff_dir)
+    create_dir(diff_dir)
     archives = get_baseline_archives()
     cmd = []
     cmd.append('find')

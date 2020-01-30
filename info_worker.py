@@ -4,10 +4,10 @@ from Queue import Queue
 from threading import Thread
 from time import time
 from process_yaml import *
+import shared_vars
 
-diff_dir = 'diff'
-
-wsp_root = '/mnt/data/whisper'
+diff_dir = shared_vars.diff_dir
+wsp_root = shared_vars.wsp_root
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
 
@@ -31,7 +31,6 @@ class InfoWorker(Thread):
                     append_to_file(write_to, wsp_file)
             finally:
                 self.queue.task_done()
-
 
 def main():
     ts = time()

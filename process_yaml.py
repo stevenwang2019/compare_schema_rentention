@@ -99,9 +99,9 @@ def match_file_path(filepath, archives):
 
 def exec_subprocess(cmd):
     try:
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        findout,finderr = out.communicate()
-        return findout, finderr
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out,err = proc.communicate()
+        return out, err
     except Exception as ex:
             print(cmd)
             print(ex)
@@ -142,10 +142,17 @@ def get_baseline_archives():
             for retention in retentions:
                 output_string = convert_retention_to_string(retention)
                 list.append(output_string)
-            archives.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list, ' '.join(retentions)))
+            archives.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list, retentions))
             #compare_whisper_info(schema, info['pattern'], list)
             write_to_file(output_dir + schema, list)
     return archives
+
+def resize_wsp(file, resize_arg):
+    cmd = []
+    cmd.append('whisper-resize')
+    cmd.append(file)
+    cmd = cmd + resize_arg
+    exec_subprocess(cmd)
 
 def main():
     remove_dir(diff_dir)
@@ -159,7 +166,11 @@ def main():
     findout,finderr = exec_subprocess(cmd)
     for file in findout.split('\n'):
         archive = match_file_path(file, archives)
-        compare_whisper_info(file, archive)
+        if compare_whisper_info(file, archive) == 1 :
+            if shared_vars.resize:
+                resize_wsp(file, archive.resize_arg)
+            if shared_vars.remove_bak:
+                os.remove(file)
 
 if __name__== "__main__":
     main()

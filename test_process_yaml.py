@@ -61,13 +61,17 @@ class TestConversion(unittest.TestCase):
         archives = get_baseline_archives()
         self.assertEqual(len(archives), 16)
         self.assertEqual(archives[0].schema, "copperegg")
-        self.assertEqual(archives[0].resize_arg, "1m:1y 1h:5y")
+        arr = ['1m:1y', '1h:5y']
+        self.assertEqual(archives[0].resize_arg, arr)
         self.assertEqual(archives[5].schema, "totango_cron")
-        self.assertEqual(archives[5].resize_arg, "1h:1y")
+        arr = ['1h:1y']
+        self.assertEqual(archives[5].resize_arg, arr)
         self.assertEqual(archives[10].schema, "consul_health_service")
-        self.assertEqual(archives[10].resize_arg, "10s:1d")
+        arr = ['10s:1d']
+        self.assertEqual(archives[10].resize_arg, arr)
         self.assertEqual(archives[15].schema, "zzzzzzzz_default")
-        self.assertEqual(archives[15].resize_arg, "900:350400")
+        arr = ['900:350400']
+        self.assertEqual(archives[15].resize_arg, arr)
 
     def test_match_file_path(self):
         archives = get_baseline_archives()

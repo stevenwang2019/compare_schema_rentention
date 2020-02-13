@@ -1,6 +1,6 @@
 # compare_schema_rentention
 
-whisper-info is only installed in production, so run below before running the script
+whisper-info is only installed in integration and production, so run below before running the script
 
 pip install pyyaml
 

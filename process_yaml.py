@@ -21,6 +21,13 @@ diff_file = shared_vars.diff_file
 if(len(sys.argv) > 1):
     wsp_root = str(sys.argv[1])
 
+class Archive:
+    def __init__(self, schema, pattern, rentention_list, retention_resize_args):
+        self.schema = schema
+        self.pattern = pattern
+        self.rlist = rentention_list
+        self.resize_arg = retention_resize_args
+
 def convert_retention_to_int(retention):
     if(len(retention)== 0):
         raise Exception("Empty string")
@@ -84,12 +91,6 @@ def compare_wsp_retention(wspout, list):
         return 1
     return 0
 
-class Archive:
-    def __init__(self, schema, pattern, rentention_list):
-        self.schema = schema
-        self.pattern = pattern
-        self.rlist = rentention_list
-
 def match_file_path(filepath, archives):
     for arch in archives:
         if re.search(arch.pattern, filepath):
@@ -136,10 +137,12 @@ def get_baseline_archives():
         for schema, info in schemas.items():
             retentions = info['retentions']
             list = []
+            # print(schema)
+            # print(' '.join(retentions))
             for retention in retentions:
                 output_string = convert_retention_to_string(retention)
                 list.append(output_string)
-            archives.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list))
+            archives.append(Archive(schema, build_subdir_from_pattern(info['pattern']), list, ' '.join(retentions)))
             #compare_whisper_info(schema, info['pattern'], list)
             write_to_file(output_dir + schema, list)
     return archives
